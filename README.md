@@ -18,3 +18,11 @@ $ rsg --target /some/path/foo --api-path /test --api-port 8080 --export-findings
 2020-03-03T10:43:03 Launching load test for /some/path/foo for peak state resource usage assessment
 2020-03-03T10:53:22 Found peak state resource usage: MEMORY = 800 MB and CPU = 4000 milli
 ```
+
+## Background
+
+Based on an [informal query on Twitter](https://twitter.com/mhausenblas/status/1225855388584730624) these tools already provide similar functionality:
+
+- [time](http://man7.org/linux/man-pages/man1/time.1.html)
+- [perf](http://www.brendangregg.com/perf.html)
+- [DTrace](http://www.brendangregg.com/DTrace/cputimes)
