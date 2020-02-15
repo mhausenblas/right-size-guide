@@ -1,0 +1,26 @@
+project_name: rsg
+release:
+  github:
+    owner: mhausenblas
+    name: rsg
+builds:
+  - id: rsg
+    goos:
+    - linux
+    - darwin
+    goarch:
+    - amd64
+    - "386"
+    - arm
+    - arm64
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    main: .
+    ldflags: -s -w
+      -X github.com/mhausenblas/rsg/version.version=
+archives:
+  - id: rsg
+    builds:
+    - rsg
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
