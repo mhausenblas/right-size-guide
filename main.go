@@ -44,9 +44,11 @@ func main() {
 	go assessidle()
 	<-time.After(isampletime)
 	log.Printf("Idle state assessment of %v completed\n", *target)
-	err := icmd.Process.Signal(os.Interrupt)
-	if err != nil {
-		log.Fatalf("Can't stop process: %v\n", err)
+	if icmd.Process != nil {
+		err := icmd.Process.Signal(os.Interrupt)
+		if err != nil {
+			log.Fatalf("Can't stop process: %v\n", err)
+		}
 	}
 	ifs := <-idlef
 	log.Printf("Found idle state resource usage. MEMORY: %vkB CPU: %vms (user)/%vms (sys)",
@@ -58,9 +60,11 @@ func main() {
 	go assesspeak(*apiport, *apipath)
 	<-time.After(psampletime)
 	log.Printf("Peak state assessment of %v completed\n", *target)
-	err = pcmd.Process.Signal(os.Interrupt)
-	if err != nil {
-		log.Fatalf("Can't stop process: %v\n", err)
+	if pcmd.Process != nil {
+		err := pcmd.Process.Signal(os.Interrupt)
+		if err != nil {
+			log.Fatalf("Can't stop process: %v\n", err)
+		}
 	}
 	pfs := <-peakf
 	log.Printf("Found peak state resource usage. MEMORY: %vkB CPU: %vms (user)/%vms (sys)",
@@ -81,9 +85,11 @@ func assessidle() {
 	log.Println("Trying to determine idle state resource usage (no external traffic)")
 	icmd.Run()
 	f := Findings{}
-	f.MemoryMaxRSS = icmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss
-	f.CPUuser = icmd.ProcessState.SysUsage().(*syscall.Rusage).Utime
-	f.CPUsys = icmd.ProcessState.SysUsage().(*syscall.Rusage).Stime
+	if icmd.ProcessState != nil {
+		f.MemoryMaxRSS = icmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss
+		f.CPUuser = icmd.ProcessState.SysUsage().(*syscall.Rusage).Utime
+		f.CPUsys = icmd.ProcessState.SysUsage().(*syscall.Rusage).Stime
+	}
 	idlef <- f
 }
 
@@ -95,9 +101,12 @@ func assesspeak(apiport, apipath string) {
 	go stress(apiport, apipath)
 	pcmd.Run()
 	f := Findings{}
-	f.MemoryMaxRSS = pcmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss
-	f.CPUuser = pcmd.ProcessState.SysUsage().(*syscall.Rusage).Utime
-	f.CPUsys = pcmd.ProcessState.SysUsage().(*syscall.Rusage).Stime
+	if pcmd.ProcessState != nil {
+		f := Findings{}
+		f.MemoryMaxRSS = pcmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss
+		f.CPUuser = pcmd.ProcessState.SysUsage().(*syscall.Rusage).Utime
+		f.CPUsys = pcmd.ProcessState.SysUsage().(*syscall.Rusage).Stime
+	}
 	peakf <- f
 }
 
