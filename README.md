@@ -15,7 +15,18 @@ Amazon ECS, HashiCorp Nomad, and even good old Apache Mesos+Marathon.
 
 ## Install it
 
-TBD. Currently from source only, works for Linux and macOS.
+Download the [latest binary](https://github.com/mhausenblas/rsg/releases/latest) 
+for Linux (Intel or Arm) and macOS.
+
+For example, to install `rsg` from binary on macOS you could do the following:
+
+```sh
+curl -L https://github.com/mhausenblas/rsg/releases/latest/download/rsg_darwin_amd64.tar.gz \
+    -o rsg.tar.gz && \
+    tar xvzf rsg.tar.gz rsg && \
+    mv rsg /usr/local/bin && \
+    rm rsg*
+```
 
 ## Use it
 
