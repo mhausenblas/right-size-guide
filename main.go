@@ -144,9 +144,11 @@ func export(ifs, pfs Findings, exportfile string) {
 			log.Printf("Can't export findings: %v\n", err)
 		}
 	default: // if no export file path set, write to stdout
-		_, err := bufio.NewWriter(os.Stdout).Write(data)
+		w := bufio.NewWriter(os.Stdout)
+		_, err := w.Write(data)
 		if err != nil {
 			log.Printf("Can't export findings: %v\n", err)
 		}
+		w.Flush()
 	}
 }
