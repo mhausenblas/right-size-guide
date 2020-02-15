@@ -33,8 +33,8 @@ func main() {
 	}
 
 	// Set up global data structures:
-	isampletime := time.Duration(2) * time.Second
-	psampletime := time.Duration(10) * time.Second
+	isampletime := time.Duration(1) * time.Second
+	psampletime := time.Duration(5) * time.Second
 	idlef = make(chan Findings, 1)
 	peakf = make(chan Findings, 1)
 	icmd = exec.Command(*target)
@@ -74,7 +74,7 @@ func main() {
 
 	// Handle export of findings if instructed to do so
 	if *exportfile != "" {
-		log.Printf("Exporting findings to %v", *exportfile)
+		export(ifs, pfs, *exportfile)
 	}
 }
 
@@ -121,4 +121,9 @@ func stress(apiport, apipath string) {
 		}
 		time.Sleep(1 * time.Second)
 	}
+}
+
+func export(ifs, pfs Findings, exportfile string) {
+	log.Printf("Exporting findings to %v", exportfile)
+	fmt.Printf("%v %v", ifs, pfs)
 }
