@@ -26,14 +26,22 @@ var idlef, peakf chan Findings
 
 func main() {
 	// Define the CLI API:
+	flag.Usage = func() {
+		fmt.Printf("Usage:\n %s --target $BINARY [--api-path $HTTP_URL_PATH --api-port $HTTP_PORT --peak-delay $TIME_MS --export-findings $FILE]\n", os.Args[0])
+		fmt.Println("Example usage:\n rsg --target test/test --api-path /ping --api-port 8080 2>/dev/null")
+		fmt.Println("Arguments:")
+		flag.PrintDefaults()
+	}
 	target := flag.String("target", "", "The filesystem path of the binary or script to assess")
 	apipath := flag.String("api-path", "", "[OPTIONAL] The URL path component of the HTTP API to use for peak assessment")
 	apiport := flag.String("api-port", "", "[OPTIONAL] The TCP port of the HTTP API to use for peak assessment")
 	peakdelay := flag.Int("peak-delay", 10, "[OPTIONAL] The time in milliseconds to wait between two consecutive HTTP GET requests")
 	exportfile := flag.String("export-findings", "", "[OPTIONAL] The filesystem path to export findings to; if not provided the results will be written to stdout")
 	flag.Parse()
-	if *target == "" {
-		log.Fatalln("Need at least the target program to proceed")
+	if len(os.Args) == 0 || *target == "" {
+		fmt.Printf("Need at least the target program to proceed\n\n")
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	// Set up testing parameters
