@@ -54,6 +54,8 @@ func main() {
 	peakf = make(chan Findings, 1)
 	icmd = exec.Command(*target)
 	pcmd = exec.Command(*target)
+	ifs := Findings{}
+	pfs := Findings{}
 
 	// Perform idle state assessment:
 	go assessidle()
@@ -65,28 +67,29 @@ func main() {
 			log.Fatalf("Can't stop process: %v\n", err)
 		}
 	}
-	ifs := <-idlef
+	ifs = <-idlef
 	log.Printf("Found idle state resource usage. MEMORY: %vkB CPU: %vms (user)/%vms (sys)",
 		ifs.MemoryMaxRSS/1000,
 		ifs.CPUuser/1000,
 		ifs.CPUsys/1000)
 
 	// Perform peak state assessment:
-	go assesspeak(*apiport, *apipath, peakhammerpause)
-	<-time.After(psampletime)
-	log.Printf("Peak state assessment of %v completed\n", *target)
-	if pcmd.Process != nil {
-		err := pcmd.Process.Signal(os.Interrupt)
-		if err != nil {
-			log.Fatalf("Can't stop process: %v\n", err)
+	if *apipath != "" && *apiport != "" {
+		go assesspeak(*apiport, *apipath, peakhammerpause)
+		<-time.After(psampletime)
+		log.Printf("Peak state assessment of %v completed\n", *target)
+		if pcmd.Process != nil {
+			err := pcmd.Process.Signal(os.Interrupt)
+			if err != nil {
+				log.Fatalf("Can't stop process: %v\n", err)
+			}
 		}
+		pfs = <-peakf
+		log.Printf("Found peak state resource usage. MEMORY: %vkB CPU: %vms (user)/%vms (sys)",
+			pfs.MemoryMaxRSS/1000,
+			pfs.CPUuser/1000,
+			pfs.CPUsys/1000)
 	}
-	pfs := <-peakf
-	log.Printf("Found peak state resource usage. MEMORY: %vkB CPU: %vms (user)/%vms (sys)",
-		pfs.MemoryMaxRSS/1000,
-		pfs.CPUuser/1000,
-		pfs.CPUsys/1000)
-
 	// Handle export of findings:
 	export(ifs, pfs, *exportfile)
 }

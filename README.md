@@ -62,9 +62,9 @@ $ rsg --target test/test --api-path /ping --api-port 8080
 You can also specify a file explicitly and suppress the status updates, like so:
 
 ```sh
-$ go run main.go --target test/test \
-                 --api-path /ping --api-port 8080 \
-                 --export-findings ./results.json 2>/dev/null
+$ rsg --target test/test \
+      --api-path /ping --api-port 8080 \
+      --export-findings ./results.json 2>/dev/null
 ```
 
 Then, you could pull out specific results, say, using `jq`:
