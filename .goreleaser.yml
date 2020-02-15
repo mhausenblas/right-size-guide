@@ -2,9 +2,9 @@ project_name: rsg
 release:
   github:
     owner: mhausenblas
-    name: rsg
+    name: right-size-guide
 builds:
-  - id: rsg
+  - id: right-size-guide
     goos:
     - linux
     - darwin
@@ -16,9 +16,9 @@ builds:
       - GO111MODULE=on
     main: .
     ldflags: -s -w
-      -X github.com/mhausenblas/rsg/version.version=
+      -X github.com/mhausenblas/right-size-guide/version.version=
 archives:
-  - id: rsg
+  - id: right-size-guide
     builds:
-    - rsg
+    - right-size-guide
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
