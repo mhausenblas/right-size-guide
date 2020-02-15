@@ -82,3 +82,4 @@ Based on an [informal query on Twitter](https://twitter.com/mhausenblas/status/1
 - [time](http://man7.org/linux/man-pages/man1/time.1.html)
 - [perf](http://www.brendangregg.com/perf.html)
 - [DTrace](http://www.brendangregg.com/DTrace/cputimes)
+- [senpai](https://github.com/facebookincubator/senpai)
