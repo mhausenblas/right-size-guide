@@ -1,23 +1,68 @@
 # Right Size Guide (rsg)
 
-Right Size Guide (`rsg`) is a simple CLI tool that provides you with memory and CPU recommendations for your application. While, in containerized setups and there espectially in Kubernetes-land, things like the [VPA](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler) exist that could be used to extract similar recommendations, they are: 1. limited to a certain orchestrator (Kubernetes), and 2. rather complicated to use. With `rsg` we want to do the opposite: an easy to use tool that can be used with and for any container orchestrator.
+Right Size Guide (`rsg`) is a simple CLI tool that provides you with memory and 
+CPU recommendations for your application. While, in containerized setups and 
+there especially in Kubernetes-land, components such as the
+[VPA](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler) 
+exist that could be used to extract similar recommendations, they are: 
+
+1. limited to a certain orchestrator (Kubernetes), and 
+1. rather complicated to use, since they come with a number of dependencies.
+   
+With `rsg` we want to do the opposite: an easy to use tool with zero dependencies
+that can be used with and for any container orchestrator, including Kubernetes,
+Amazon ECS, HashiCorp Nomad, and even good old Apache Mesos+Marathon.
 
 ## Install it
 
-TBD.
+TBD. Currently from source only, works for Linux and macOS.
 
 ## Use it
 
-Imagine you have an application called `foo`. It's a binary executable that can be run directly (for example, it doesn't depend on a runtime such as a JVM). Now, this is how you can use `rsg` to figure out how much memory and/or CPU your app requires:
+Imagine you have an application called `test`. It's a binary executable that 
+exposes an HTTP API on `:8080/ping`. Now, this is how you can use `rsg` to 
+figure out how much memory and/or CPU your app requires:
 
 ```sh
-$ rsg --target /some/path/foo --api-path /test --api-port 8080 --export-findings ./foo-resource-usage.txt
-2020-03-03T10:42:10 Launching /some/path/foo for idle state resource usage assessment
-2020-03-03T10:42:13 Trying to determine idle state resource usage (no external traffic)
-2020-03-03T10:42:59 Found idle state resource usage: MEMORY = 533 MB and CPU = 2900 milli
-2020-03-03T10:43:03 Launching load test for /some/path/foo for peak state resource usage assessment
-2020-03-03T10:53:22 Found peak state resource usage: MEMORY = 800 MB and CPU = 4000 milli
+$ rsg --target test/test --api-path /ping --api-port 8080
+2020/02/15 12:40:42 Launching test/test for idle state resource usage assessment
+2020/02/15 12:40:42 Trying to determine idle state resource usage (no external traffic)
+2020/02/15 12:40:44 Idle state assessment of test/test completed
+2020/02/15 12:40:44 Found idle state resource usage. MEMORY: 7684kB CPU: 7ms (user)/7ms (sys)
+2020/02/15 12:40:44 Launching test/test for peak state resource usage assessment
+2020/02/15 12:40:44 Trying to determine peak state resource usage using 127.0.0.1:8080/ping
+2020/02/15 12:40:45 Starting to hammer the endpoint http://127.0.0.1:8080/ping every 10ms
+2020/02/15 12:40:49 Peak state assessment of test/test completed
+2020/02/15 12:40:49 Found peak state resource usage. MEMORY: 13824kB CPU: 68ms (user)/62ms (sys)
+{
+ "idle": {
+  "memory_in_bytes": 7684096,
+  "cpuuser_in_usec": 7926,
+  "cpusys_in_usec": 7536
+ },
+ "peak": {
+  "memory_in_bytes": 13824000,
+  "cpuuser_in_usec": 68745,
+  "cpusys_in_usec": 62138
+ }
+}
 ```
+
+You can also specify a file explicitly and suppress the status updates, like so:
+
+```sh
+$ go run main.go --target test/test \
+                 --api-path /ping --api-port 8080 \
+                 --export-findings ./results.json 2>/dev/null
+```
+
+Then, you could pull out specific results, say, using `jq`:
+
+```sh
+$ cat results.json | jq .peak.cpuuser_in_usec
+76174
+```
+
 
 ## Background
 
