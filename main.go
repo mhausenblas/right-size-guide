@@ -91,7 +91,7 @@ func assessidle() {
 	icmd.Run()
 	f := Findings{}
 	if icmd.ProcessState != nil {
-		f.MemoryMaxRSS = icmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss
+		f.MemoryMaxRSS = int64(icmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss)
 		f.CPUuser = int64(icmd.ProcessState.SysUsage().(*syscall.Rusage).Utime.Usec)
 		f.CPUsys = int64(icmd.ProcessState.SysUsage().(*syscall.Rusage).Stime.Usec)
 	}
@@ -107,13 +107,14 @@ func assesspeak(apiport, apipath string, peakhammerpause time.Duration) {
 	pcmd.Run()
 	f := Findings{}
 	if pcmd.ProcessState != nil {
-		f.MemoryMaxRSS = pcmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss
+		f.MemoryMaxRSS = int64(pcmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss)
 		f.CPUuser = int64(pcmd.ProcessState.SysUsage().(*syscall.Rusage).Utime.Usec)
 		f.CPUsys = int64(pcmd.ProcessState.SysUsage().(*syscall.Rusage).Stime.Usec)
 	}
 	peakf <- f
 }
 
+// stress performs an HTTP GET stress test against the port/path provided
 func stress(apiport, apipath string, peakhammerpause time.Duration) {
 	time.Sleep(1 * time.Second)
 	ep := fmt.Sprintf("http://127.0.0.1:%v%v", apiport, apipath)
@@ -127,6 +128,7 @@ func stress(apiport, apipath string, peakhammerpause time.Duration) {
 	}
 }
 
+// export writes the findings to a file or stdout, if exportfile is empty
 func export(ifs, pfs Findings, exportfile string) {
 	fs := map[string]Findings{
 		"idle": ifs,
