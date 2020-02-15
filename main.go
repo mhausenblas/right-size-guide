@@ -17,8 +17,8 @@ import (
 // Findings captures idle and peak resource usage
 type Findings struct {
 	MemoryMaxRSS int64 `json:"memory_in_bytes"`
-	CPUuser      int32 `json:"cpuuser_in_usec"`
-	CPUsys       int32 `json:"cpusys_in_usec"`
+	CPUuser      int64 `json:"cpuuser_in_usec"`
+	CPUsys       int64 `json:"cpusys_in_usec"`
 }
 
 var icmd, pcmd *exec.Cmd
@@ -92,8 +92,8 @@ func assessidle() {
 	f := Findings{}
 	if icmd.ProcessState != nil {
 		f.MemoryMaxRSS = icmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss
-		f.CPUuser = icmd.ProcessState.SysUsage().(*syscall.Rusage).Utime.Usec
-		f.CPUsys = icmd.ProcessState.SysUsage().(*syscall.Rusage).Stime.Usec
+		f.CPUuser = int64(icmd.ProcessState.SysUsage().(*syscall.Rusage).Utime.Usec)
+		f.CPUsys = int64(icmd.ProcessState.SysUsage().(*syscall.Rusage).Stime.Usec)
 	}
 	idlef <- f
 }
@@ -108,8 +108,8 @@ func assesspeak(apiport, apipath string, peakhammerpause time.Duration) {
 	f := Findings{}
 	if pcmd.ProcessState != nil {
 		f.MemoryMaxRSS = pcmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss
-		f.CPUuser = pcmd.ProcessState.SysUsage().(*syscall.Rusage).Utime.Usec
-		f.CPUsys = pcmd.ProcessState.SysUsage().(*syscall.Rusage).Stime.Usec
+		f.CPUuser = int64(pcmd.ProcessState.SysUsage().(*syscall.Rusage).Utime.Usec)
+		f.CPUsys = int64(pcmd.ProcessState.SysUsage().(*syscall.Rusage).Stime.Usec)
 	}
 	peakf <- f
 }
