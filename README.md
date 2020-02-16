@@ -13,6 +13,14 @@ With `rsg` we want to do the opposite: an easy to use tool with zero dependencie
 that can be used with and for any container orchestrator, including Kubernetes,
 Amazon ECS, HashiCorp Nomad, and even good old Apache Mesos+Marathon.
 
+
+1. [Install it](#install-it)
+2. [Use it](#use-it)
+   - [Assessing the idle resource usage](#assessing-the-idle-resource-usage)
+   - [Assessing the peak resource usage](#assessing-the-peak-resource-usage)
+   - [Emit OpenMetrics](#emit-openmetrics)
+3. [Background and prior art](#background-and-prior-art)
+
 ## Install it
 
 Download the [latest binary](https://github.com/mhausenblas/right-size-guide/releases/latest) 
@@ -31,16 +39,17 @@ curl -L https://github.com/mhausenblas/right-size-guide/releases/latest/download
 ## Use it
 
 You can use `rsg` for both idle and peak resource usage assessment. The findings 
-are presented in a simple JSON format, friendly for usage in a pipeline. Status
+are presented in a simple JSON format, friendly for usage in a pipeline or 
+in [OpenMetrics](https://openmetrics.io/) for ingestion in Prometheus. Status
 updates are written to `stderr` so you can suppress them if you like.
 
 ```sh
 $ rsg -h
 Usage:
- rsg --target $BINARY [--api-path $HTTP_URL_PATH --api-port $HTTP_PORT --peak-delay $TIME_MS --sampletime-idle $TIME_SEC --sampletime-peak $TIME_SEC --export-findings $FILE]
+ rsg --target $BINARY 
+     [--api-path $HTTP_URL_PATH --api-port $HTTP_PORT --peak-delay $TIME_MS --sampletime-idle $TIME_SEC --sampletime-peak $TIME_SEC --export-findings $FILE]
 Example usage:
  rsg --target test/test --api-path /ping --api-port 8080 2>/dev/null
-Arguments:
   -api-path string
         [OPTIONAL] The URL path component of the HTTP API to use for peak resource usage assessment
   -api-port string
@@ -49,6 +58,8 @@ Arguments:
         [OPTIONAL] The time in milliseconds to wait between two consecutive HTTP GET requests for peak resource usage assessment (default 10)
   -export-findings string
         [OPTIONAL] The filesystem path to export findings to; if not provided the results will be written to stdout
+  -output string
+        [OPTIONAL] The output format, valid values are 'json' and 'openmetrics' (default "json")
   -sampletime-idle int
         [OPTIONAL] The time in seconds to perform idle resource usage assessment (default 2)
   -sampletime-peak int
@@ -128,9 +139,43 @@ $ cat results.json | jq .peak.cpuuser_in_usec
 76174
 ```
 
-### Stream OpenMetrics
+### Emit OpenMetrics
 
-To stream [OpenMetrics](https://openmetrics.io/) during assessment … TBD :)
+By default, `rsg` will output the findings in JSON, however it's super easy to
+emit OpenMetrics, like so:
+
+```sh
+$ rsg --target test/test \
+      --api-path /ping --api-port 8080 \
+      --output openmetrics
+2020/02/15 16:46:01 Launching test/test for idle state resource usage assessment
+2020/02/15 16:46:01 Trying to determine idle state resource usage (no external traffic)
+2020/02/15 16:46:03 Idle state assessment of test/test completed
+2020/02/15 16:46:03 Found idle state resource usage. MEMORY: 7831kB CPU: 8ms (user)/8ms (sys)
+2020/02/15 16:46:03 Launching test/test for peak state resource usage assessment
+2020/02/15 16:46:03 Trying to determine peak state resource usage using 127.0.0.1:8080/ping
+2020/02/15 16:46:04 Starting to hammer the endpoint http://127.0.0.1:8080/ping every 10ms
+2020/02/15 16:46:13 Peak state assessment of test/test completed
+2020/02/15 16:46:13 Found peak state resource usage. MEMORY: 20168kB CPU: 180ms (user)/168ms (sys)
+# HELP idle_memory The idle state memory consumption
+# TYPE idle_memory gauge
+idle_memory{unit="kB",target="test/test"} 7831552
+# HELP idle_cpu_user The idle state CPU consumption in user land
+# TYPE idle_cpu_user gauge
+idle_cpu_user{unit="microsec",target="test/test"} 8079
+# HELP idle_cpu_sys The idle state CPU consumption in the kernel
+# TYPE idle_cpu_sys gauge
+idle_cpu_sys{unit="microsec",target="test/test"} 8152
+# HELP peak_memory The peak state memory consumption
+# TYPE peak_memory gauge
+peak_memory{unit="kB",target="test/test"} 20168704
+# HELP peak_cpu_user The peak state CPU consumption in user land
+# TYPE peak_cpu_user gauge
+peak_cpu_user{unit="microsec",target="test/test"} 180770
+# HELP peak_cpu_sys The peak state CPU consumption in the kernel
+# TYPE peak_cpu_sys gauge
+peak_cpu_sys{unit="microsec",target="test/test"} 168892
+```
 
 ## Background and prior art
 

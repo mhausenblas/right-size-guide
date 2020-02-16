@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -28,7 +29,7 @@ var idlef, peakf chan Findings
 func main() {
 	// Define the CLI API:
 	flag.Usage = func() {
-		fmt.Printf("Usage:\n %s --target $BINARY [--api-path $HTTP_URL_PATH --api-port $HTTP_PORT --peak-delay $TIME_MS --sampletime-idle $TIME_SEC --sampletime-peak $TIME_SEC --export-findings $FILE]\n", os.Args[0])
+		fmt.Printf("Usage:\n %s --target $BINARY \n [--api-path $HTTP_URL_PATH --api-port $HTTP_PORT --peak-delay $TIME_MS --sampletime-idle $TIME_SEC --sampletime-peak $TIME_SEC --export-findings $FILE --output json|openmetrics]\n", os.Args[0])
 		fmt.Println("Example usage:\n rsg --target test/test --api-path /ping --api-port 8080 2>/dev/null")
 		fmt.Println("Arguments:")
 		flag.PrintDefaults()
@@ -40,6 +41,7 @@ func main() {
 	apiport := flag.String("api-port", "", "[OPTIONAL] The TCP port of the HTTP API to use for peak resource usage assessment")
 	peakdelay := flag.Int("delay-peak", 10, "[OPTIONAL] The time in milliseconds to wait between two consecutive HTTP GET requests for peak resource usage assessment")
 	exportfile := flag.String("export-findings", "", "[OPTIONAL] The filesystem path to export findings to; if not provided the results will be written to stdout")
+	outputformat := flag.String("output", "json", "[OPTIONAL] The output format, valid values are 'json' and 'openmetrics'")
 	flag.Parse()
 	if len(os.Args) == 0 || *target == "" {
 		fmt.Printf("Need at least the target program to proceed\n\n")
@@ -94,7 +96,7 @@ func main() {
 			pfs.CPUsys/1000)
 	}
 	// Handle export of findings:
-	export(ifs, pfs, *exportfile)
+	export(ifs, pfs, *exportfile, *outputformat, *target)
 }
 
 // assessidle performs the idle state resource usage assessment, that is,
@@ -143,7 +145,7 @@ func stress(apiport, apipath string, peakhammerpause time.Duration) {
 }
 
 // export writes the findings to a file or stdout, if exportfile is empty
-func export(ifs, pfs Findings, exportfile string) {
+func export(ifs, pfs Findings, exportfile, outputformat, target string) {
 	fs := map[string]Findings{
 		"idle": ifs,
 		"peak": pfs,
@@ -152,20 +154,76 @@ func export(ifs, pfs Findings, exportfile string) {
 	if err != nil {
 		log.Printf("Can't serialize findings: %v\n", err)
 	}
-	switch {
-	case exportfile != "": // use export file path provided
-		log.Printf("Exporting findings as JSON to %v", exportfile)
-		err := ioutil.WriteFile(exportfile, data, 0644)
-		if err != nil {
-			log.Printf("Can't export findings: %v\n", err)
+
+	outputformat = strings.ToLower(outputformat)
+	switch outputformat {
+	case "json":
+		switch {
+		case exportfile != "": // use export file path provided
+			log.Printf("Exporting findings as JSON to %v", exportfile)
+			err := ioutil.WriteFile(exportfile, data, 0644)
+			if err != nil {
+				log.Printf("Can't export findings: %v\n", err)
+			}
+		default: // if no export file path set, write to stdout
+			w := bufio.NewWriter(os.Stdout)
+			_, err := w.Write(data)
+			if err != nil {
+				log.Printf("Can't export findings: %v\n", err)
+			}
+			w.Flush()
 		}
-	default: // if no export file path set, write to stdout
-		w := bufio.NewWriter(os.Stdout)
-		_, err := w.Write(data)
-		if err != nil {
-			log.Printf("Can't export findings: %v\n", err)
+	case "openmetrics":
+		var buffer bytes.Buffer
+		buffer.WriteString(emito("idle_memory",
+			"gauge",
+			"The idle state memory consumption",
+			fmt.Sprintf("%d", ifs.MemoryMaxRSS),
+			map[string]string{"target": target, "unit": "kB"}))
+		buffer.WriteString(emito("idle_cpu_user",
+			"gauge",
+			"The idle state CPU consumption in user land",
+			fmt.Sprintf("%d", ifs.CPUuser),
+			map[string]string{"target": target, "unit": "microsec"}))
+		buffer.WriteString(emito("idle_cpu_sys",
+			"gauge",
+			"The idle state CPU consumption in the kernel",
+			fmt.Sprintf("%d", ifs.CPUsys),
+			map[string]string{"target": target, "unit": "microsec"}))
+		if pfs.MemoryMaxRSS != 0 {
+			buffer.WriteString(emito("peak_memory",
+				"gauge",
+				"The peak state memory consumption",
+				fmt.Sprintf("%d", pfs.MemoryMaxRSS),
+				map[string]string{"target": target, "unit": "kB"}))
+			buffer.WriteString(emito("peak_cpu_user",
+				"gauge",
+				"The peak state CPU consumption in user land",
+				fmt.Sprintf("%d", pfs.CPUuser),
+				map[string]string{"target": target, "unit": "microsec"}))
+			buffer.WriteString(emito("peak_cpu_sys",
+				"gauge",
+				"The peak state CPU consumption in the kernel",
+				fmt.Sprintf("%d", pfs.CPUsys),
+				map[string]string{"target": target, "unit": "microsec"}))
 		}
-		w.Flush()
+		switch {
+		case exportfile != "": // use export file path provided
+			log.Printf("Exporting findings in OpenMetrics format to %v", exportfile)
+			err := ioutil.WriteFile(exportfile, buffer.Bytes(), 0644)
+			if err != nil {
+				log.Printf("Can't export findings: %v\n", err)
+			}
+		default: // if no export file path set, write to stdout
+			w := bufio.NewWriter(os.Stdout)
+			_, err := w.Write(buffer.Bytes())
+			if err != nil {
+				log.Printf("Can't export findings: %v\n", err)
+			}
+			w.Flush()
+		}
+	default:
+		log.Printf("Can't export findings, unknown output format selected, please use json or openmetrics")
 	}
 }
 
