@@ -30,36 +30,90 @@ curl -L https://github.com/mhausenblas/right-size-guide/releases/latest/download
 
 ## Use it
 
-Imagine you have an application called `test`. It's a binary executable that 
-exposes an HTTP API on `:8080/ping`. Now, this is how you can use `rsg` to 
-figure out how much memory and/or CPU your app requires:
+You can use `rsg` for both idle and peak resource usage assessment. The findings 
+are presented in a simple JSON format, friendly for usage in a pipeline. Status
+updates are written to `stderr` so you can suppress them if you like.
 
 ```sh
-$ rsg --target test/test --api-path /ping --api-port 8080
-2020/02/15 12:40:42 Launching test/test for idle state resource usage assessment
-2020/02/15 12:40:42 Trying to determine idle state resource usage (no external traffic)
-2020/02/15 12:40:44 Idle state assessment of test/test completed
-2020/02/15 12:40:44 Found idle state resource usage. MEMORY: 7684kB CPU: 7ms (user)/7ms (sys)
-2020/02/15 12:40:44 Launching test/test for peak state resource usage assessment
-2020/02/15 12:40:44 Trying to determine peak state resource usage using 127.0.0.1:8080/ping
-2020/02/15 12:40:45 Starting to hammer the endpoint http://127.0.0.1:8080/ping every 10ms
-2020/02/15 12:40:49 Peak state assessment of test/test completed
-2020/02/15 12:40:49 Found peak state resource usage. MEMORY: 13824kB CPU: 68ms (user)/62ms (sys)
+$ rsg -h
+Usage:
+ rsg --target $BINARY [--api-path $HTTP_URL_PATH --api-port $HTTP_PORT --peak-delay $TIME_MS --sampletime-idle $TIME_SEC --sampletime-peak $TIME_SEC --export-findings $FILE]
+Example usage:
+ rsg --target test/test --api-path /ping --api-port 8080 2>/dev/null
+Arguments:
+  -api-path string
+        [OPTIONAL] The URL path component of the HTTP API to use for peak resource usage assessment
+  -api-port string
+        [OPTIONAL] The TCP port of the HTTP API to use for peak resource usage assessment
+  -delay-peak int
+        [OPTIONAL] The time in milliseconds to wait between two consecutive HTTP GET requests for peak resource usage assessment (default 10)
+  -export-findings string
+        [OPTIONAL] The filesystem path to export findings to; if not provided the results will be written to stdout
+  -sampletime-idle int
+        [OPTIONAL] The time in seconds to perform idle resource usage assessment (default 2)
+  -sampletime-peak int
+        [OPTIONAL] The time in seconds to perform peak resource usage assessment (default 10)
+  -target string
+        The filesystem path of the binary or script to assess
+```
+
+### Assessing the idle resource usage
+
+Let's see how much `/usr/bin/yes` uses:
+
+```sh
+$ rsg --target /usr/bin/yes
+2020/02/15 16:14:37 Launching /usr/bin/yes for idle state resource usage assessment
+2020/02/15 16:14:37 Trying to determine idle state resource usage (no external traffic)
+2020/02/15 16:14:39 Idle state assessment of /usr/bin/yes completed
+2020/02/15 16:14:39 Found idle state resource usage. MEMORY: 786kB CPU: 986ms (user)/9ms (sys)
 {
  "idle": {
-  "memory_in_bytes": 7684096,
-  "cpuuser_in_usec": 7926,
-  "cpusys_in_usec": 7536
+  "memory_in_bytes": 786432,
+  "cpuuser_in_usec": 986316,
+  "cpusys_in_usec": 9140
  },
  "peak": {
-  "memory_in_bytes": 13824000,
-  "cpuuser_in_usec": 68745,
-  "cpusys_in_usec": 62138
+  "memory_in_bytes": 0,
+  "cpuuser_in_usec": 0,
+  "cpusys_in_usec": 0
  }
 }
 ```
 
-You can also specify a file explicitly and suppress the status updates, like so:
+### Assessing the peak resource usage
+
+Now, imagine you have an application called `test` (as shown in [test/](test/main.go)). 
+It's a binary executable that exposes an HTTP API on `:8080/ping`. This is how 
+you can use `rsg` to figure out how much memory and CPU this app server requires:
+
+```sh
+$ rsg --target test/test --api-path /ping --api-port 8080
+2020/02/15 16:20:24 Launching test/test for idle state resource usage assessment
+2020/02/15 16:20:24 Trying to determine idle state resource usage (no external traffic)
+2020/02/15 16:20:26 Idle state assessment of test/test completed
+2020/02/15 16:20:26 Found idle state resource usage. MEMORY: 7757kB CPU: 8ms (user)/11ms (sys)
+2020/02/15 16:20:26 Launching test/test for peak state resource usage assessment
+2020/02/15 16:20:26 Trying to determine peak state resource usage using 127.0.0.1:8080/ping
+2020/02/15 16:20:27 Starting to hammer the endpoint http://127.0.0.1:8080/ping every 10ms
+2020/02/15 16:20:36 Peak state assessment of test/test completed
+2020/02/15 16:20:36 Found peak state resource usage. MEMORY: 20209kB CPU: 191ms (user)/179ms (sys)
+{
+ "idle": {
+  "memory_in_bytes": 7757824,
+  "cpuuser_in_usec": 8634,
+  "cpusys_in_usec": 11988
+ },
+ "peak": {
+  "memory_in_bytes": 20209664,
+  "cpuuser_in_usec": 191918,
+  "cpusys_in_usec": 179626
+ }
+}
+```
+
+You can also specify a file to export the findings to explicitly and suppress 
+the status updates, like so:
 
 ```sh
 $ rsg --target test/test \
@@ -74,8 +128,11 @@ $ cat results.json | jq .peak.cpuuser_in_usec
 76174
 ```
 
+### Stream OpenMetrics
 
-## Background
+To stream [OpenMetrics](https://openmetrics.io/) during assessment … TBD :)
+
+## Background and prior art
 
 Based on an [informal query on Twitter](https://twitter.com/mhausenblas/status/1225855388584730624) these tools already provide similar functionality:
 

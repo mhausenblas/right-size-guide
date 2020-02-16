@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -27,15 +28,17 @@ var idlef, peakf chan Findings
 func main() {
 	// Define the CLI API:
 	flag.Usage = func() {
-		fmt.Printf("Usage:\n %s --target $BINARY [--api-path $HTTP_URL_PATH --api-port $HTTP_PORT --peak-delay $TIME_MS --export-findings $FILE]\n", os.Args[0])
+		fmt.Printf("Usage:\n %s --target $BINARY [--api-path $HTTP_URL_PATH --api-port $HTTP_PORT --peak-delay $TIME_MS --sampletime-idle $TIME_SEC --sampletime-peak $TIME_SEC --export-findings $FILE]\n", os.Args[0])
 		fmt.Println("Example usage:\n rsg --target test/test --api-path /ping --api-port 8080 2>/dev/null")
 		fmt.Println("Arguments:")
 		flag.PrintDefaults()
 	}
 	target := flag.String("target", "", "The filesystem path of the binary or script to assess")
-	apipath := flag.String("api-path", "", "[OPTIONAL] The URL path component of the HTTP API to use for peak assessment")
-	apiport := flag.String("api-port", "", "[OPTIONAL] The TCP port of the HTTP API to use for peak assessment")
-	peakdelay := flag.Int("peak-delay", 10, "[OPTIONAL] The time in milliseconds to wait between two consecutive HTTP GET requests")
+	idlest := flag.Int("sampletime-idle", 2, "[OPTIONAL] The time in seconds to perform idle resource usage assessment")
+	peakst := flag.Int("sampletime-peak", 10, "[OPTIONAL] The time in seconds to perform peak resource usage assessment")
+	apipath := flag.String("api-path", "", "[OPTIONAL] The URL path component of the HTTP API to use for peak resource usage assessment")
+	apiport := flag.String("api-port", "", "[OPTIONAL] The TCP port of the HTTP API to use for peak resource usage assessment")
+	peakdelay := flag.Int("delay-peak", 10, "[OPTIONAL] The time in milliseconds to wait between two consecutive HTTP GET requests for peak resource usage assessment")
 	exportfile := flag.String("export-findings", "", "[OPTIONAL] The filesystem path to export findings to; if not provided the results will be written to stdout")
 	flag.Parse()
 	if len(os.Args) == 0 || *target == "" {
@@ -45,8 +48,8 @@ func main() {
 	}
 
 	// Set up testing parameters
-	isampletime := time.Duration(2) * time.Second
-	psampletime := time.Duration(5) * time.Second
+	isampletime := time.Duration(*idlest) * time.Second
+	psampletime := time.Duration(*peakst) * time.Second
 	peakhammerpause := time.Duration(*peakdelay) * time.Millisecond
 
 	// Set up global data structures and testing parameter
@@ -164,4 +167,24 @@ func export(ifs, pfs Findings, exportfile string) {
 		}
 		w.Flush()
 	}
+}
+
+// emito creates an OpenMetrics compliant line, for example:
+// # HELP pod_count_all Number of pods in any state (running, terminating, etc.)
+// # TYPE pod_count_all gauge
+// pod_count_all{namespace="krs"} 4 1538675211
+func emito(metric, metrictype, metricdesc, value string, labels map[string]string) (line string) {
+	line = fmt.Sprintf("# HELP %v %v\n", metric, metricdesc)
+	line += fmt.Sprintf("# TYPE %v %v\n", metric, metrictype)
+	// add labels:
+	line += fmt.Sprintf("%v{", metric)
+	for k, v := range labels {
+		line += fmt.Sprintf("%v=\"%v\"", k, v)
+		line += ","
+	}
+	// make sure that we get rid of trialing comma:
+	line = strings.TrimSuffix(line, ",")
+	// now add value and we're done:
+	line += fmt.Sprintf("} %v\n", value)
+	return
 }
