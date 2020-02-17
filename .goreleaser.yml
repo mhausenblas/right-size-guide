@@ -16,7 +16,7 @@ builds:
       - GO111MODULE=on
     main: .
     ldflags: -s -w
-      -X github.com/mhausenblas/right-size-guide/version.version=
+      -X github.com/mhausenblas/right-size-guide/main.version={{.Version}}
 archives:
   - id: right-size-guide
     builds:
