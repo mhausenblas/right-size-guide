@@ -23,6 +23,8 @@ type Findings struct {
 	CPUsys       int64 `json:"cpusys_in_usec"`
 }
 
+var version string
+
 var icmd, pcmd *exec.Cmd
 var idlef, peakf chan Findings
 
@@ -42,7 +44,14 @@ func main() {
 	peakdelay := flag.Int("delay-peak", 10, "[OPTIONAL] The time in milliseconds to wait between two consecutive HTTP GET requests for peak resource usage assessment")
 	exportfile := flag.String("export-findings", "", "[OPTIONAL] The filesystem path to export findings to; if not provided the results will be written to stdout")
 	outputformat := flag.String("output", "json", "[OPTIONAL] The output format, valid values are 'json' and 'openmetrics'")
+	showversion := flag.Bool("version", false, "Print the version of rsg and exit")
 	flag.Parse()
+
+	if *showversion {
+		fmt.Printf("This is rsg in version %v", version)
+		os.Exit(0)
+	}
+
 	if len(os.Args) == 0 || *target == "" {
 		fmt.Printf("Need at least the target program to proceed\n\n")
 		flag.Usage()
