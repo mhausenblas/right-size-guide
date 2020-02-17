@@ -23,7 +23,7 @@ type Findings struct {
 	CPUsys       int64 `json:"cpusys_in_usec"`
 }
 
-var version = "dev"
+var version string
 
 var icmd, pcmd *exec.Cmd
 var idlef, peakf chan Findings
@@ -48,7 +48,7 @@ func main() {
 	flag.Parse()
 
 	if *showversion {
-		fmt.Printf("This is rsg in version: %v@%v", version, time.Now().Unix())
+		fmt.Printf("This is rsg in version: %v", version)
 		os.Exit(0)
 	}
 
