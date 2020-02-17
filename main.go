@@ -23,8 +23,6 @@ type Findings struct {
 	CPUsys       int64 `json:"cpusys_in_usec"`
 }
 
-var version string
-
 var icmd, pcmd *exec.Cmd
 var idlef, peakf chan Findings
 
