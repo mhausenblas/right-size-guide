@@ -16,7 +16,6 @@ builds:
       - CGO_ENABLED=0
       - GO111MODULE=on
     main: .
-    ldflags: -s -w -X github.com/mhausenblas/right-size-guide/main.version={{.Version}}
 archives:
   - id: right-size-guide
     builds:
