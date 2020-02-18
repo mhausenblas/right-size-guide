@@ -46,10 +46,11 @@ updates are written to `stderr` so you can suppress them if you like.
 ```sh
 $ rsg -h
 Usage:
- rsg --target $BINARY 
-     [--api-path $HTTP_URL_PATH --api-port $HTTP_PORT --peak-delay $TIME_MS --sampletime-idle $TIME_SEC --sampletime-peak $TIME_SEC --export-findings $FILE]
+ rsg --target $BINARY
+ [--api-path $HTTP_URL_PATH --api-port $HTTP_PORT --peak-delay $TIME_MS --sampletime-idle $TIME_SEC --sampletime-peak $TIME_SEC --export-findings $FILE --output json|openmetrics]
 Example usage:
  rsg --target test/test --api-path /ping --api-port 8080 2>/dev/null
+Arguments:
   -api-path string
         [OPTIONAL] The URL path component of the HTTP API to use for peak resource usage assessment
   -api-port string
@@ -66,6 +67,8 @@ Example usage:
         [OPTIONAL] The time in seconds to perform peak resource usage assessment (default 10)
   -target string
         The filesystem path of the binary or script to assess
+  -version
+        Print the version of rsg and exit
 ```
 
 ### Assessing the idle resource usage
