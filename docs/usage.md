@@ -57,7 +57,7 @@ $ rsg --target /usr/bin/yes
 
 ### Assessing the peak resource usage
 
-Now, imagine you have an application called `test` (as shown in [test/](test/main.go)). 
+Now, imagine you have an application called `test` (as shown in [test/](https://github.com/mhausenblas/right-size-guide/blob/master/test/main.go)). 
 It's a binary executable that exposes an HTTP API on `:8080/ping`. This is how 
 you can use `rsg` to figure out how much memory and CPU this app server requires:
 
