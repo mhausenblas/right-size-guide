@@ -1,0 +1,34 @@
+site_name: rsg
+site_description: 'A tool that provides memory & CPU recommendations for apps'
+site_author: 'Michael Hausenblas'
+repo_name: 'mhausenblas/right-size-guide'
+repo_url: 'https://github.com/mhausenblas/right-size-guide'
+copyright: 'Copyright &copy; 2020 Amazon'
+nav:
+    - Home: index.md
+    - Usage: usage.md
+    - Examples: examples.md
+theme:
+    name: 'material'
+    logo:
+        icon: 'memory'
+    font:
+      text: 'Lato'
+      code: 'PT Mono'
+    palette:
+      primary: 'orange'
+      accent: 'blue'
+    highlightjs: true
+    hljs_languages:
+        - yaml
+        - json
+        - bash
+markdown_extensions:
+    - toc:
+        permalink: true
+    - admonition
+    - codehilite:
+        linenums: true
+    - pymdownx.details
+    - pymdownx.superfences
+
