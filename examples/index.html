@@ -89,7 +89,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#aws-fargate" tabindex="1" class="md-skip">
+      <a href="#kubernetes" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -273,8 +273,22 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#kubernetes" title="Kubernetes" class="md-nav__link">
+    Kubernetes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#aws-fargate" title="AWS Fargate" class="md-nav__link">
     AWS Fargate
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#amazon-ecs" title="Amazon ECS" class="md-nav__link">
+    Amazon ECS
   </a>
   
 </li>
@@ -309,8 +323,22 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#kubernetes" title="Kubernetes" class="md-nav__link">
+    Kubernetes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#aws-fargate" title="AWS Fargate" class="md-nav__link">
     AWS Fargate
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#amazon-ecs" title="Amazon ECS" class="md-nav__link">
+    Amazon ECS
   </a>
   
 </li>
@@ -336,7 +364,84 @@
                 
                   <h1>Examples</h1>
                 
-                <h3 id="aws-fargate">AWS Fargate<a class="headerlink" href="#aws-fargate" title="Permanent link">&para;</a></h3>
+                <p>In this section we show how to apply <code>rsg</code> findings in the context of container 
+orchestrators or other related environments, such as serverless compute engines..</p>
+<h3 id="kubernetes">Kubernetes<a class="headerlink" href="#kubernetes" title="Permanent link">&para;</a></h3>
+<p>In Kubernetes, the <a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/">Quality of Service (QoS) </a> 
+of a pod is defined via the resource requests and limits. The former being an 
+input for the scheduler to find a fitting node to launch the pod and the latter
+can be a cause to terminate any container in a pod. For example,
+if a container <a href="https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/">consumes memory beyond its limit</a>
+it is <a href="https://www.kernel.org/doc/gorman/html/understand/understand016.html">OOM</a> killed.</p>
+<p>But how to arrive at "good" values for the resource requests and limits, which should
+be the same BTW if you want have deterministic behavior? <code>rsg</code> to the rescue …</p>
+<p>Let's say you run <code>rsg</code> on your app and get the following results (made up, but hey):</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><span class="p">{</span>
+ <span class="nt">&quot;idle&quot;</span><span class="p">:</span> <span class="p">{</span>
+  <span class="nt">&quot;memory_in_bytes&quot;</span><span class="p">:</span> <span class="mi">10123456</span><span class="p">,</span>
+  <span class="nt">&quot;cpuuser_in_usec&quot;</span><span class="p">:</span> <span class="mi">2000</span><span class="p">,</span>
+  <span class="nt">&quot;cpusys_in_usec&quot;</span><span class="p">:</span> <span class="mi">13000</span>
+ <span class="p">},</span>
+ <span class="nt">&quot;peak&quot;</span><span class="p">:</span> <span class="p">{</span>
+  <span class="nt">&quot;memory_in_bytes&quot;</span><span class="p">:</span> <span class="mi">25042987</span><span class="p">,</span>
+  <span class="nt">&quot;cpuuser_in_usec&quot;</span><span class="p">:</span> <span class="mi">4000</span><span class="p">,</span>
+  <span class="nt">&quot;cpusys_in_usec&quot;</span><span class="p">:</span> <span class="mi">87666</span>
+ <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</td></tr></table>
+
+<p>You would then plug it into the Kubernetes manifest like so:</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><span class="nn">...</span>
+<span class="nt">spec</span><span class="p">:</span>
+  <span class="nt">containers</span><span class="p">:</span>
+  <span class="p p-Indicator">-</span> <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">someapp</span>
+    <span class="nt">image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">theimage:sometag</span>
+    <span class="nt">resources</span><span class="p">:</span>
+      <span class="nt">limits</span><span class="p">:</span>
+        <span class="nt">memory</span><span class="p">:</span> <span class="s">&quot;30M&quot;</span>
+        <span class="nt">cpu</span><span class="p">:</span> <span class="s">&quot;900m&quot;</span>
+      <span class="nt">requests</span><span class="p">:</span>
+        <span class="nt">memory</span><span class="p">:</span> <span class="s">&quot;30M&quot;</span>
+        <span class="nt">cpu</span><span class="p">:</span> <span class="s">&quot;900m&quot;</span>
+</pre></div>
+</td></tr></table>
+
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Above we used the peak value of the <code>rsg</code> finding <code>memory_in_bytes</code> which is
+<code>25,042,987</code> and padded it a little, arriving at <code>30M</code>, which is the <a href="https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory">Kubernetes
+way of saying</a> 
+"can I have 30 MB please".</p>
+</div>
+<h3 id="aws-fargate">AWS Fargate<a class="headerlink" href="#aws-fargate" title="Permanent link">&para;</a></h3>
+<p>In EKS on Fargate, one must observe the <a href="https://docs.aws.amazon.com/eks/latest/userguide/fargate-pod-configuration.html">pod resource allocations</a>.
+You can see what happens if you don't do this in <a href="https://gist.github.com/mhausenblas/56db56d63dad78fc4e81108da49f28b2">this Gist</a>.</p>
+<p><em>TBD</em></p>
+<h3 id="amazon-ecs">Amazon ECS<a class="headerlink" href="#amazon-ecs" title="Permanent link">&para;</a></h3>
+<p><em>TBD</em></p>
                 
                   
                 
