@@ -365,7 +365,7 @@
                   <h1>Examples</h1>
                 
                 <p>In this section we show how to apply <code>rsg</code> findings in the context of container 
-orchestrators or other related environments, such as serverless compute engines..</p>
+orchestrators or other related environments, such as serverless compute engines.</p>
 <h3 id="kubernetes">Kubernetes<a class="headerlink" href="#kubernetes" title="Permanent link">&para;</a></h3>
 <p>In Kubernetes, the <a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/">Quality of Service (QoS) </a> 
 of a pod is defined via the resource requests and limits. The former being an 
@@ -374,7 +374,7 @@ can be a cause to terminate any container in a pod. For example,
 if a container <a href="https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/">consumes memory beyond its limit</a>
 it is <a href="https://www.kernel.org/doc/gorman/html/understand/understand016.html">OOM</a> killed.</p>
 <p>But how to arrive at "good" values for the resource requests and limits, which should
-be the same BTW if you want have deterministic behavior? <code>rsg</code> to the rescue …</p>
+be the same BTW if you want to have deterministic behavior? <code>rsg</code> to the rescue …</p>
 <p>Let's say you run <code>rsg</code> on your app and get the following results (made up, but hey):</p>
 <table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span> 1
  2
