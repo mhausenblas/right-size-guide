@@ -1,5 +1,5 @@
 In this section we show how to apply `rsg` findings in the context of container 
-orchestrators or other related environments, such as serverless compute engines..
+orchestrators or other related environments, such as serverless compute engines.
 
 ### Kubernetes
 
@@ -11,7 +11,7 @@ if a container [consumes memory beyond its limit](https://kubernetes.io/docs/tas
 it is [OOM](https://www.kernel.org/doc/gorman/html/understand/understand016.html) killed.
 
 But how to arrive at "good" values for the resource requests and limits, which should
-be the same BTW if you want have deterministic behavior? `rsg` to the rescue …
+be the same BTW if you want to have deterministic behavior? `rsg` to the rescue …
 
 Let's say you run `rsg` on your app and get the following results (made up, but hey):
 
